@@ -32,7 +32,7 @@ def search_glossary(query: str) -> str:
     """講座の用語集から用語を検索し、定義と、どの回で扱うかを返す。
 
     AIエンジニアリングの用語や、この講座（AIE2026）に固有の言葉について
-    答える前に使うこと。query には調べたい用語を1つだけ入れる（例: "LoRA"）。
+    答える前に使うこと。複数の用語を調べるときも、query には調べたい用語をまとめて1つの文字列として入れ、1回だけ呼び出すこと（例: "LoRA QLoRA"）。
     """
     q = _normalize(query)
     if not q:
@@ -77,3 +77,20 @@ def get_lecture_summary(lecture: int) -> str:
         available = sorted(p.stem for p in (DATA_DIR / "lectures").glob("*.md"))
         return f"第{lecture}回の要点はまだありません。用意されている回: {', '.join(available)}"
     return path.read_text(encoding="utf-8")
+import random
+def make_quiz(lecture: int) -> str:
+    """指定した回（1始まりの整数）の用語から1つを選び、確認問題と答えを返す。
+    「第2回の確認問題を出して」のように、復習用の問題を求められたときに使う。
+    """
+    terms = [e for e in load_glossary() if e["lecture"] == lecture]
+    if not terms:
+        return f"第{lecture}回の用語は見つかりませんでした。"
+    chosen = random.choice(terms)
+    return json.dumps(
+        {
+            "question": f"「{chosen['term']}」の意味は？",
+            "answer": chosen["definition"],
+            "lecture": chosen["lecture"],
+        },
+        ensure_ascii=False,
+    )
